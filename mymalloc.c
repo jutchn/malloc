@@ -24,7 +24,7 @@ void numToChar(int size, int inuse, unsigned char *myblock){
 
 int charToSize(unsigned char *both){
     unsigned char OF = '<'/4;
-    printf("%d\n",(*(both) & OF))<<8;
+    //printf("%d\n",(*(both) & OF))<<8;
     return (*(both) & OF)*256 + *(both + 1);
 }
 
@@ -36,13 +36,25 @@ int charToInUse(unsigned char *first){
     }
 }
 
-void printMem(unsigned char *myblock){
-    int i = 0;
-    while(1){
-        int temp;
+void printMem(){
+    int metaSize;
+    int metaUse;  
+    int index = 0;
+    while(index < 4096){
+        
+        metaSize = charToSize(myblock + index);
+        metaUse = charToInUse(myblock + index);
+        //if(metaSize != 0){
+        printf("Metadata | Size: %d bytes | Use: %d\n", metaSize, metaUse);
+        //}
+        if(metaSize==0){
+            break;
+        }
+        index+=metaSize+2;
+        
     }
 }
-void* mymalloc(int size, const char* file, int line){
+int mymalloc(int size, const char* file, int line){
     if(size == 0){
         return -1; //return a non null pointer?  
     }
@@ -51,21 +63,22 @@ void* mymalloc(int size, const char* file, int line){
     int index = 0;
     while(index < 4096){
         metaSize = charToSize(myblock + index);
-        metaUse = charToSize(myblock + index);
+        metaUse = charToInUse(myblock + index);
         
         if(metaUse == 0){
             if(size<=metaSize){
                 numToChar(size,1,myblock + index);
+                if(metaSize-size>2){
+                    numToChar(metaSize-size-2, 0, myblock + index + 2 + size);
+                }
+                // or else donate
                 return index; //pointer to 
             }
         }
         index+=2;
         index+=metaSize;
     }
-    if(4096 - index >= size + 2){
-        numToChar(size, 1, myblock + index);
-        return index;
-    }
+    
 
     perror("error u fool");
     return -1;
@@ -77,7 +90,12 @@ int myfree(){
 }
 
 int main(){
-    numToChar(0,0,myblock);
-
-
+    numToChar(4094, 0, myblock);
+    printMem();
+    printf("\n");
+    //printf("%d",myblock[5]);
+    mymalloc(3, "pee", 3);
+    mymalloc(4, "pee", 3);
+    mymalloc(5, "pee", 3);
+    printMem();
 }
