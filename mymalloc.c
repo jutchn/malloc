@@ -1,5 +1,6 @@
 #include "mymalloc.h"
 #include <stdio.h>
+#include <stddef.h>
 #define MEMORY_SIZE 4096
 
 static unsigned char myblock[MEMORY_SIZE];
@@ -95,34 +96,42 @@ void* mymalloc(size_t size, const char* file, int line) {
 }
 
 void myfree(void* pointer, const char* file, int line) {
-    unsigned char F = 15;  // hex: F | binary: 0000 1111
-
-    if ((uintptr_t)pointer >= (uintptr_t)myblock && (uintptr_t)pointer < (uintptr_t)myblock + (uintptr_t)MEMORY_SIZE) {
-        int inUse = charToInUse((unsigned char*)pointer - 2);
-        unsigned char* currMeta = (unsigned char*)pointer - 2;
-        if (inUse) {
-            currMeta[0] = currMeta[0] & F;
+    int index = 0;
+    int isInHeap = 0;
+    while (index < MEMORY_SIZE) {
+        unsigned char* currPointer = myblock + index;
+        if ((unsigned char*)pointer == currPointer+2) {
+            if (charToInUse(currPointer)) {
+                numToChar(charToSize(currPointer), 0, currPointer);
+            }
+            else {
+               printf("Free Error: Memory Region Not In Use\n");
+               return;
+            }
+            isInHeap = 1;
+            break;
         }
-        else {
-            printf("Free Error: Memory Region Not In Use\n");
-        }
+        index += charToSize(currPointer) + 2;
     }
-    else {
+    if (!isInHeap) {
+        printf("\033[0; 31m");
         printf("Free Error: Variable Not in Heap\n");
+        printf("\033[0m");
+        return;
     }
 
-    int prevSize = charToSize(myblock);
-    int prevUse = charToInUse(myblock);
     unsigned char* prevBlock = myblock;
-    int index = prevSize+2;
+    int prevSize = charToSize(prevBlock);
+    int prevUse = charToInUse(prevBlock);
+    index = prevSize+2;
     while (index < MEMORY_SIZE) {
         if (prevSize == 0) {
             break;
         }
-        int currSize = charToSize(myblock + index);
-        int currUse = charToInUse(myblock + index);
-        int currBlock = myblock + index;
-
+        unsigned char* currBlock = myblock + index;
+        int currSize = charToSize(currBlock);
+        int currUse = charToInUse(currBlock);
+        
         if (prevUse == 0 && currUse == 0) {
             numToChar(prevSize + currSize + 2,0,prevBlock);
             prevSize = prevSize + currSize + 2;
@@ -148,12 +157,16 @@ int main() {
     int* pee1 = malloc(10);
     //free(pee1);
     int* pee2 = malloc(15);
+    numToChar(charToSize((unsigned char*)pee2-2), 0, (unsigned char*)pee2-2);
+    printMem();
     int* pee3 = malloc(1000);
     free(pee2);
-    printMem();
-    free(pee1);
-    printMem();
-    free(pee3);
+    //free(pee2);
+    //printMem();
+    //free(pee1);
+    //printMem();
+    //free(pee3);
+    //free(pee3);
     printMem();
     
 }
