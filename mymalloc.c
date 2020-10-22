@@ -111,18 +111,18 @@ void myfree(void* pointer, const char* file, int line) {
         printf("Free Error: Variable Not in Heap\n");
     }
 
+    int prevSize = charToSize(myblock);
+    int prevUse = charToInUse(myblock);
     unsigned char* prevBlock = myblock;
-    int prevSize = charToSize(prevBlock);
-    int prevUse = charToInUse(prevBlock);
     int index = prevSize+2;
     while (index < MEMORY_SIZE) {
         if (prevSize == 0) {
             break;
         }
+        int currSize = charToSize(myblock + index);
+        int currUse = charToInUse(myblock + index);
         int currBlock = myblock + index;
-        int currSize = charToSize(currBlock);
-        int currUse = charToInUse(currBlock);
-        
+
         if (prevUse == 0 && currUse == 0) {
             numToChar(prevSize + currSize + 2,0,prevBlock);
             prevSize = prevSize + currSize + 2;
