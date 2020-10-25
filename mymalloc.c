@@ -1,4 +1,3 @@
-#include "mymalloc.h"
 #include <stdio.h>
 #include <stddef.h>
 #define MEMORY_SIZE 4096
@@ -39,6 +38,7 @@ int charToInUse(unsigned char* first) {
 }
 
 void printMem() {
+    
     int metaSize;
     int metaUse;
     int index = 0;
@@ -53,8 +53,14 @@ void printMem() {
         printf("Metadata: 2 bytes \nBlock Size: %d bytes \nTotal Block Size: %d \nIn Use: %s\n\n", metaSize, metaSize + 2, metaUse ? "True" : "False");
         index += metaSize + 2;
     }
+    printf("---------------------------------------------\n");
 }
+
 void* mymalloc(size_t size, const char* file, int line) {
+    // initialize memory with metadata of block size 4094 and inuse 0
+    if(charToSize(myblock + 0) == 0){
+        numToChar(MEMORY_SIZE - 2, 0, myblock);
+    }
     if (size == 0) {
         return myblock; //return a non null pointer?  
     }
@@ -72,7 +78,6 @@ void* mymalloc(size_t size, const char* file, int line) {
                 numToChar(size, 1, myblock + index);
                 // check if space before next block is big enough for malloc size
                 if (metaSize - size >= 2 && index + 2 + size < MEMORY_SIZE - 2) {
-                    //printf("%d %d\n", metaSize, index);
                     numToChar(metaSize - size - 2, 0, myblock + index + 2 + size);
                 }
                 // or else donate
@@ -81,7 +86,6 @@ void* mymalloc(size_t size, const char* file, int line) {
         }
         // if you exceed the bounds of memory
         if (index + 2 + metaSize > MEMORY_SIZE) {
-            //printf("%d %d\n", index, index + 2 + metaSize);
             numToChar(MEMORY_SIZE - index - 2, 0, myblock + index);
             return myblock + index + 2;
         }
@@ -90,7 +94,7 @@ void* mymalloc(size_t size, const char* file, int line) {
     }
 
 
-    printf("error u fool\n");
+    printf("Malloc Error: No available space to allocate (file:%s line:%d)\n",file,line);
     return myblock;
 
 }
@@ -105,7 +109,7 @@ void myfree(void* pointer, const char* file, int line) {
                 numToChar(charToSize(currPointer), 0, currPointer);
             }
             else {
-               printf("Free Error: Memory Region Not In Use\n");
+               printf("Free Error: Memory Region Not In Use (file:%s line:%d)\n",file,line);
                return;
             }
             isInHeap = 1;
@@ -115,7 +119,7 @@ void myfree(void* pointer, const char* file, int line) {
     }
     if (!isInHeap) {
         printf("\033[0; 31m");
-        printf("Free Error: Variable Not in Heap\n");
+        printf("Free Error: Variable Not in Memory (file:%s line:%d)\n",file,line);
         printf("\033[0m");
         return;
     }
@@ -143,30 +147,4 @@ void myfree(void* pointer, const char* file, int line) {
         }
         index += currSize + 2;
     }
-}
-
-int main() {
-    numToChar(MEMORY_SIZE - 2, 0, myblock);
-
-    printMem();
-    printf("\n");
-    //printf("%d",myblock[5]);
-    //mymalloc(3, __FILE__, __LINE__);
-    //malloc(1);
-    int* test = malloc(2333);
-    int* pee1 = malloc(10);
-    //free(pee1);
-    int* pee2 = malloc(15);
-    numToChar(charToSize((unsigned char*)pee2-2), 0, (unsigned char*)pee2-2);
-    printMem();
-    int* pee3 = malloc(1000);
-    free(pee2);
-    //free(pee2);
-    //printMem();
-    //free(pee1);
-    //printMem();
-    //free(pee3);
-    //free(pee3);
-    printMem();
-    
 }
