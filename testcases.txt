@@ -6,4 +6,17 @@ frees every other block so that there are 512 blocks remaining in memory
 separated by gaps of 4 bytes between them. Then it mallocs into those gaps
 512 times to refill up memory to max capacity and subsequently frees all
 1024 blocks to reset the memory. The workload verifies the memory usage of 
-each malloc to be 2 bytes + x bytes of the users choosing and the ability of malloc to allocate into gaps between allocated memory if size permits.
+each malloc to be 2 bytes + x bytes of the users choosing and the ability of
+malloc to allocate into gaps between allocated memory if size permits.
+
+Workload E:
+This workload tests the programs ability to merge adjacent unused blocks
+of memory. It first fills the memory array by calling malloc(2) 1020 times
+to create 1020 2-byte blocks. Then it frees all the blocks that aren't 
+multiples of 5 in 1,2,4,3 mod 5 order. By freeing in this order, this workload
+tests the programs ability to combine the freed blocks. After everything has been
+properly freed, it then allocates 14 byte blocks into the freed blocks,
+to test if they have been properly combined. Finally it goes through and
+frees everything in the array. The workload verifies the program's ability
+to properly merge adjacent unused blocks into larger blocks so that the user
+can best make use of unused space.
